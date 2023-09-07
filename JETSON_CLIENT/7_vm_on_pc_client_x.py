@@ -28,18 +28,18 @@ print("example data has been set successfully--nis\n")
 #------------------------------------
 
 import os
-if not os.path.exists('/home/xigong/trt_pose/tasks/hand_pose/model/hand_pose_resnet18_att_244_244_trt.pth'):
+if not os.path.exists('/home/xigong/trt_pose/tasks/hand_pose_new/model/resnest/hand_pose_resnet18_att_244_244_trt.pth'):
     print("the model has not been optimized yet--nis\n")
-    MODEL_WEIGHTS = '/home/xigong/trt_pose/tasks/hand_pose/model/hand_pose_resnet18_att_244_244.pth'
+    MODEL_WEIGHTS = '/home/xigong/trt_pose/tasks/hand_pose_new/model/resnest/hand_pose_resnet18_att_244_244.pth'
     model.load_state_dict(torch.load(MODEL_WEIGHTS))
     import torch2trt
     model_trt = torch2trt.torch2trt(model, [data], fp16_mode=True, max_workspace_size=1<<25)
-    OPTIMIZED_MODEL = '/home/xigong/trt_pose/tasks/hand_pose/model/hand_pose_resnet18_att_244_244_trt.pth'
+    OPTIMIZED_MODEL = '/home/xigong/trt_pose/tasks/hand_pose_new/model/resnest/hand_pose_resnet18_att_244_244_trt.pth'
     torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
     print("the model has been optimized --nis\n")
 else:
     print("the optimized model has exsited --nis\n")
-    OPTIMIZED_MODEL = '/home/xigong/trt_pose/tasks/hand_pose/model/hand_pose_resnet18_att_244_244_trt.pth'
+    OPTIMIZED_MODEL = '/home/xigong/trt_pose/tasks/hand_pose_new/model/resnest/hand_pose_resnet18_att_244_244_trt.pth'
 #------------------------------------
 
 from torch2trt import TRTModule
@@ -90,7 +90,7 @@ def draw_joints(image, joints):
 print("image preprocess has been set --nis\n")
 #------------------------------------
 
-from preprocessdata import preprocessdata
+from preprocess.preprocessdata import preprocessdata
 preprocessdata = preprocessdata(topology, num_parts)
 
 import pickle
@@ -105,7 +105,7 @@ if svm_train:
     filename = '/home/xigong/trt_pose/tasks/hand_pose/svmmodel.sav'
     pickle.dump(clf, open(filename, 'wb'))
 else:
-    filename = '/home/xigong/trt_pose/tasks/hand_pose/svmmodel_plus.sav'
+    filename = '/home/xigong/trt_pose/tasks/hand_pose_new/model/sklearn/svmmodel_plus.sav'
     clf = pickle.load(open(filename, 'rb'))
 
 with open('/home/xigong/trt_pose/tasks/hand_pose/preprocess/gesture.json', 'r') as f:

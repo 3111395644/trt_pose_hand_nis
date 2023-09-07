@@ -1,0 +1,5 @@
+package_list/
+    __init__.py      # 包的初始化代码
+    preprocessdata.py       # 模块1
+    gesture_classifier.py       # 模块2
+    
