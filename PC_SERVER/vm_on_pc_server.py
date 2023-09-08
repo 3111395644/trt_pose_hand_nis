@@ -35,6 +35,7 @@ Delay_U, Delay_D = 0,0
 MouseSensitivity, ScrollSensitivity = 224, 1#for adjust
 Relative_X, Relative_Y = 0,0
 Ture_Relative_X, Ture_Relative_Y = 0,0
+text = "startpoint"
 
 def control_cursor(data):
     
@@ -46,14 +47,17 @@ def control_cursor(data):
     global MouseSensitivity, ScrollSensitivity 
     global Relative_X, Relative_Y
     global Ture_Relative_X, Ture_Relative_Y
+    global text
     
     text = data[0]
     joints_pos_x = data[1]
     joints_pos_y = data[2]
     Cur_x = int((joints_pos_x)*ScreenWidth/MouseSensitivity)
     Cur_y = int((joints_pos_y)*ScreenHeight/MouseSensitivity)
-    Relative_X = Cur_x - Pre_x
+    Relative_X = Cur_x - Pre_x#这里Relative_X是个烦的 --nis
     Relative_Y = Cur_y - Pre_y
+    Pre_x = Cur_x
+    Pre_y = Cur_y
         
     if text == "pan":
         Delay_L, Delay_R = 0,0
@@ -61,38 +65,39 @@ def control_cursor(data):
 
         if abs(Relative_X)<102 and abs(Relative_Y)<53:#hpf
             if abs(Relative_X)>10 or abs(Relative_Y)>5:#lpf
-                Ture_Relative_X = Relative_X 
+                Ture_Relative_X = -Relative_X 
                 Ture_Relative_Y = Relative_Y
-                pyautogui.move(-(Ture_Relative_X), Ture_Relative_Y)#'-' is for revision
+                pyautogui.move(Ture_Relative_X, Ture_Relative_Y)#'-' is for revision
     elif text == "fist":
         Delay_L += 1
-        if Delay_L > 10:
+        if Delay_L > 15:
             pyautogui.click(duration=0.3)
             Delay_L = 0
     elif text == "palm":
         Delay_R += 1
-        if Delay_R > 10:
+        if Delay_R > 15:
             pyautogui.click(button="right",duration=0.3)
             Delay_R = 0
     elif text == "thumb_up":
         Delay_U += 1
-        if Delay_U > 5:
-            pyautogui.scroll(100)
+        if Delay_U > 10:
+            pyautogui.scroll(200)
             Delay_U = 0
     elif text == "ok":
         Delay_D += 1
-        if Delay_D > 5:
-            pyautogui.scroll(-100)
+        if Delay_D > 10:
+            pyautogui.scroll(-200)
             Delay_D = 0
     
-    Pre_x = Cur_x
-    Pre_y = Cur_y
                     
 print("cursor control has been set --nis\n")
 #------------------------------------
 output_filename = 'E:\File pack\Study file\嵌入式\基于NVIDIA JETSON的人体姿态识别\cursor_pos_data.txt'  # 输出文件名
 data_count = 10000  # 要采集的数据组数
 with open(output_filename, 'w') as output_file:
+    
+    Origin_X,Origin_Y = pyautogui.position()
+    output_file.write(f'{text},x={Origin_X},y={Origin_Y}\n')
 
     while True:
         serialized_data = conn.recv(1024)  # 接收数据,chatgpt这里不准确
@@ -105,7 +110,7 @@ with open(output_filename, 'w') as output_file:
         control_cursor(data)    
         
         if data_count > 0:
-            output_file.write(f'x={-(Ture_Relative_X)},y={Ture_Relative_Y}\n')    
+            output_file.write(f'{text},x={Relative_X},y={Relative_Y}\n')    
             data_count -= 1
         
         if not listener.running:  # 如果监听器已经停止
