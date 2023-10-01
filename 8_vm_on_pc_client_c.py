@@ -7,7 +7,7 @@
 
 import json
 import trt_pose.coco
-with open('/home/xigong/trt_pose/tasks/hand_pose/preprocess/hand_pose.json', 'r') as f:
+with open('/home/xigong/trt_pose/tasks/hand_pose_new/preprocess/hand_pose.json', 'r') as f:
     hand_pose = json.load(f)
 topology = trt_pose.coco.coco_category_to_topology(hand_pose)
 print("topology has been set successfully--nis\n")
@@ -108,17 +108,57 @@ else:
     filename = '/home/xigong/trt_pose/tasks/hand_pose_new/model/sklearn/svmmodel_plus.sav'
     clf = pickle.load(open(filename, 'rb'))
 
-with open('/home/xigong/trt_pose/tasks/hand_pose/preprocess/gesture.json', 'r') as f:
+with open('/home/xigong/trt_pose/tasks/hand_pose_new/preprocess/gesture.json', 'r') as f:
     gesture = json.load(f)
 gesture_type = gesture["classes_nis"]
 
 print("ges_clf preprocess has been set --nis\n")
 #------------------------------------
-
 from jetcam.usb_camera import USBCamera
 
 camera = USBCamera(width=WIDTH, height=HEIGHT)#here device need to be adjusted
 print("camera has been set --nis\n")
+#------------------------------------
+
+from adafruit_servokit import ServoKit
+myCameraKit=ServoKit(channels=16)
+import time 
+
+ANGLE_PHI = 90
+ANGLE_THET = 15
+
+def motor_control(joints_x, joints_y):
+    global WIDTH
+    global HEIGHT
+    global ANGLE_PHI  
+    global ANGLE_THET  
+    
+    if joints_x != 0 and joints_y != 0:
+        if joints_x-0.5*WIDTH > 0.1*WIDTH:
+            if ANGLE_PHI < 180:
+                ANGLE_PHI += 1
+                myCameraKit.servo[15].angle=ANGLE_PHI
+        elif joints_x-0.5*WIDTH < -0.1*WIDTH:       
+            if ANGLE_PHI > 0:
+                ANGLE_PHI -= 1
+                myCameraKit.servo[15].angle=ANGLE_PHI
+        
+        if joints_y-0.5*HEIGHT > 0.1*HEIGHT:#方向颠倒
+            if ANGLE_THET > 0:
+                ANGLE_THET -= 1
+                myCameraKit.servo[14].angle=ANGLE_THET
+        elif joints_y-0.5*HEIGHT < -0.1*HEIGHT:
+            if ANGLE_THET < 90:
+                ANGLE_THET += 1
+                myCameraKit.servo[14].angle=ANGLE_THET
+#------------------------------------
+
+def image_show(data_q):
+    while True:
+        image_s = data_q.get()
+        cv2.imshow("USB Camera0", image_s)
+        cv2.waitKey(1)
+        #time.sleep(0.1)
 #------------------------------------
 
 def execute(data_q):
@@ -126,25 +166,26 @@ def execute(data_q):
         cursor_joint = 0
         
         image = camera.read()#read a frame
+        image_s = cv2.flip(image, 1)
         
-        data = preprocess(image)
+        data = preprocess(image_s)
         cmap, paf = model_trt(data)
         cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
         counts, objects, peaks = parse_objects(cmap, paf)
-        joints = preprocessdata.joints_inference(image, counts, objects, peaks)
-        #draw_joints(image, joints)#image process
+        joints = preprocessdata.joints_inference(image_s, counts, objects, peaks)
+        draw_joints(image_s, joints)#image process
 
         dist_bn_joints = preprocessdata.find_distance(joints)
         gesture = clf.predict([dist_bn_joints,[0]*num_parts*num_parts])
         gesture_joints = gesture[0]
         preprocessdata.prev_queue.append(gesture_joints)
         preprocessdata.prev_queue.pop(0)
-        image_s = cv2.flip(image, 1)
         preprocessdata.print_label(image_s, preprocessdata.prev_queue, gesture_type)#ges_clf
 
         data_q.put(image_s)
-        
-        data = [preprocessdata.text, joints[cursor_joint][0], joints[cursor_joint][1]]  # 这里替换为要发送的实际数据
+        joint_x = (joints[0][0]+joints[12][0])/2
+        joint_y = (joints[0][1]+joints[12][1])/2
+        data = [preprocessdata.text, joint_x, joint_y, ANGLE_PHI, ANGLE_THET]  # 这里替换为要发送的实际数据
         serialized_data = pickle.dumps(data)
         try:
             client.sendall(serialized_data)  # 发送数据，需要将字符串编码为字节流
@@ -152,20 +193,8 @@ def execute(data_q):
             print("Server disconnected --nis")
             client.close()
             break
-        # time.sleep(delay) # 可以添加适当的延迟，以控制数据发送频率
-        """
-        cv2.imshow("USB Camera0", image)
-        quitkey = cv2.waitKey(1)
-        if quitkey == ord('q'):  # press q then quit
-            print("camera out --nis\n")
-            break
-        """
-def image_show(data_q):
-    while True:
-        image_s = data_q.get()
-        cv2.imshow("USB Camera0", image_s)
-        cv2.waitKey(1)
-        #time.sleep(0.1)
+
+        motor_control(joint_x, joint_y)
 
 #------------------------------------ 
 import socket
@@ -190,6 +219,8 @@ imshow_thread = threading.Thread(target=image_show, args=(data_q, ))
 imshow_thread.daemon = True
 execute_thread = threading.Thread(target=execute, args=(data_q, ))
 
+myCameraKit.servo[15].angle=ANGLE_PHI
+myCameraKit.servo[14].angle=ANGLE_THET#云台初始化
 execute_thread.start()
 time.sleep(2)
 imshow_thread.start()

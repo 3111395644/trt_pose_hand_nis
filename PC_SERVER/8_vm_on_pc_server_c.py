@@ -55,7 +55,7 @@ Delay_L, Delay_R = 0,0
 Delay_U, Delay_D = 0,0
 MouseSensitivity, ScrollSensitivity = 224, 1#for adjust
 Relative_X, Relative_Y = 0,0
-Ture_Relative_X, Ture_Relative_Y = 0,0
+Relative_X, Relative_Y = 0,0
 text = "startpoint"
 CPOS_x, CPOS_y = pyautogui.position()
 ST1_x, ST1_y = CPOS_x, CPOS_y
@@ -71,7 +71,7 @@ def control_cursor(data):
     global Delay_U, Delay_D 
     global MouseSensitivity, ScrollSensitivity 
     global Relative_X, Relative_Y
-    global Ture_Relative_X, Ture_Relative_Y
+    global Relative_X, Relative_Y
     global text
     global CPOS_x, CPOS_y
     global ST1_x, ST1_y, ST2_x, ST2_y
@@ -82,24 +82,23 @@ def control_cursor(data):
     joints_pos_y = data[2]
     Cur_x = int((joints_pos_x)/MouseSensitivity*ScreenWidth)
     Cur_y = int((joints_pos_y)/MouseSensitivity*ScreenHeight)
-    Relative_X = Cur_x - Pre_x#这里Relative_X的方向是反向的 --nis
+    Relative_X = Cur_x - Pre_x
     Relative_Y = Cur_y - Pre_y
     Pre_x = Cur_x
     Pre_y = Cur_y
         
-    if text == "pan":
+    if text == "palm":
         Delay_L, Delay_R = 0,0
         Delay_U, Delay_D = 0,0
 
         if abs(Relative_X)<102 and abs(Relative_Y)<53:#hpf
             if abs(Relative_X)>10 or abs(Relative_Y)>5:#lpf
-                Ture_Relative_X = -Relative_X#'-' is for revision --nis 
-                Ture_Relative_Y = Relative_Y
+
                 #开始指数平滑
-                if 0<(CPOS_x + Ture_Relative_X)<ScreenWidth:
-                    CPOS_x += Ture_Relative_X
-                if 0<(CPOS_y + Ture_Relative_Y)<ScreenHeight:
-                    CPOS_y += Ture_Relative_Y
+                if 0<(CPOS_x + Relative_X)<ScreenWidth:
+                    CPOS_x += Relative_X
+                if 0<(CPOS_y + Relative_Y)<ScreenHeight:
+                    CPOS_y += Relative_Y
                 a = 0.2#平滑系数
                 ST1_x = int(a*CPOS_x + (1-a)*ST1_x)
                 ST1_y = int(a*CPOS_y + (1-a)*ST1_y)
@@ -115,13 +114,15 @@ def control_cursor(data):
                     CPOS_y_processed = ScreenHeight
                 elif CPOS_y_processed < 0:
                     CPOS_y_processed = 0#平滑完毕
+                
                 pyautogui.moveTo(CPOS_x_processed, CPOS_y_processed)
-    elif text == "fist":
+    
+    elif text == "pan":
         Delay_L += 1
         if Delay_L > 15:
             pyautogui.click(duration=0.3)
             Delay_L = 0
-    elif text == "palm":
+    elif text == "fist":
         Delay_R += 1
         if Delay_R > 15:
             pyautogui.click(button="right",duration=0.3)
