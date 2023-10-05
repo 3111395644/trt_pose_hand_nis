@@ -134,20 +134,20 @@ def motor_control(joints_x, joints_y):
     global ANGLE_THET  
     
     if joints_x != 0 and joints_y != 0:
-        if joints_x-0.5*WIDTH > 0.1*WIDTH:
+        if joints_x-0.5*WIDTH > 0.3*WIDTH:
             if ANGLE_PHI < 180:
                 ANGLE_PHI += 1
                 myCameraKit.servo[15].angle=ANGLE_PHI
-        elif joints_x-0.5*WIDTH < -0.1*WIDTH:       
+        elif joints_x-0.5*WIDTH < -0.3*WIDTH:       
             if ANGLE_PHI > 0:
                 ANGLE_PHI -= 1
                 myCameraKit.servo[15].angle=ANGLE_PHI
         
-        if joints_y-0.5*HEIGHT > 0.1*HEIGHT:#方向颠倒
+        if joints_y-0.5*HEIGHT > 0.3*HEIGHT:#方向颠倒
             if ANGLE_THET > 0:
                 ANGLE_THET -= 1
                 myCameraKit.servo[14].angle=ANGLE_THET
-        elif joints_y-0.5*HEIGHT < -0.1*HEIGHT:
+        elif joints_y-0.5*HEIGHT < -0.2*HEIGHT:
             if ANGLE_THET < 90:
                 ANGLE_THET += 1
                 myCameraKit.servo[14].angle=ANGLE_THET
@@ -183,8 +183,8 @@ def execute(data_q):
         preprocessdata.print_label(image_s, preprocessdata.prev_queue, gesture_type)#ges_clf
 
         data_q.put(image_s)
-        joint_x = (joints[0][0]+joints[12][0])/2
-        joint_y = (joints[0][1]+joints[12][1])/2
+        joint_x = joints[12][0]
+        joint_y = joints[12][1]
         data = [preprocessdata.text, joint_x, joint_y, ANGLE_PHI, ANGLE_THET]  # 这里替换为要发送的实际数据
         serialized_data = pickle.dumps(data)
         try:
