@@ -224,3 +224,5 @@ myCameraKit.servo[14].angle=ANGLE_THET#云台初始化
 execute_thread.start()
 time.sleep(2)
 imshow_thread.start()
+myCameraKit.servo[15].angle=ANGLE_PHI
+myCameraKit.servo[14].angle=ANGLE_THET#云台归位
