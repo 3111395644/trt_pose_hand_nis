@@ -53,10 +53,10 @@ Cur_x, Cur_y = 0,0
 Pre_x, Pre_y = 0,0
 Delay_L, Delay_R = 0,0
 Delay_U, Delay_D = 0,0
-MouseSensitivity, MotorSensitivity = 224, 2#for adjust
+CapSensitivity, MotorSensitivity = 224/1.2, 20#for adjust
 Relative_X, Relative_Y = 0,0
 text = "startpoint"
-CPOS_x, CPOS_y = pyautogui.position()
+CPOS_x, CPOS_y = ScreenWidth/2, ScreenHeight/2
 ST1_x, ST1_y = CPOS_x, CPOS_y
 ST2_x, ST2_y = CPOS_x, CPOS_y
 CPOS_x_processed, CPOS_y_processed = 0,0
@@ -70,7 +70,7 @@ def control_cursor():
     global Pre_x, Pre_y 
     global Delay_L, Delay_R 
     global Delay_U, Delay_D 
-    global MouseSensitivity, MotorSensitivity 
+    global CapSensitivity, MotorSensitivity 
     global Relative_X, Relative_Y
     global text
     global CPOS_x, CPOS_y
@@ -80,6 +80,7 @@ def control_cursor():
     global Cur_ANGLE_PHI_CORRECTION, Cur_ANGLE_THET_CORRECTION
     global Pre_ANGLE_PHI_CORRECTION, Pre_ANGLE_THET_CORRECTION
     
+    pyautogui.moveTo(ScreenWidth/2, ScreenHeight/2)
     while True:
         serialized_data = conn.recv(1024)  # 接收数据,chatgpt这里不准确
         data = pickle.loads(serialized_data)  # 反序列化数据，得到原始的列表
@@ -90,22 +91,26 @@ def control_cursor():
         joints_pos_x, joints_pos_y = data[1], data[2]
         ANGLE_PHI, ANGLE_THET = data[3], data[4]
 
-        Cur_x = int((joints_pos_x)/MouseSensitivity*ScreenWidth)
-        Cur_y = int((joints_pos_y)/MouseSensitivity*ScreenHeight)
-        Cur_ANGLE_PHI_CORRECTION = int((ANGLE_PHI)/MotorSensitivity*ScreenWidth)
-        Cur_ANGLE_THET_CORRECTION = int((ANGLE_THET)/MotorSensitivity*ScreenWidth)
-        Relative_X = (Cur_x - Pre_x) + (Cur_ANGLE_PHI_CORRECTION - Pre_ANGLE_PHI_CORRECTION)
-        Relative_Y = (Cur_y - Pre_y) + (Cur_ANGLE_THET_CORRECTION - Pre_ANGLE_THET_CORRECTION)
+        Cur_x = int((joints_pos_x)/CapSensitivity*ScreenWidth)
+        Cur_y = int((joints_pos_y)/CapSensitivity*ScreenHeight)
+        Cur_ANGLE_PHI_CORRECTION = (ANGLE_PHI)*MotorSensitivity
+        Cur_ANGLE_THET_CORRECTION = (ANGLE_THET)*MotorSensitivity
+        if Cur_ANGLE_PHI_CORRECTION != Pre_ANGLE_PHI_CORRECTION or Cur_ANGLE_THET_CORRECTION != Pre_ANGLE_THET_CORRECTION:
+            Relative_X = (Cur_ANGLE_PHI_CORRECTION - Pre_ANGLE_PHI_CORRECTION)
+            Relative_Y = -(Cur_ANGLE_THET_CORRECTION - Pre_ANGLE_THET_CORRECTION)
+        else:
+            Relative_X = Cur_x - Pre_x
+            Relative_Y = Cur_y - Pre_y
         Pre_x = Cur_x
         Pre_y = Cur_y
         Pre_ANGLE_PHI_CORRECTION = Cur_ANGLE_PHI_CORRECTION
         Pre_ANGLE_THET_CORRECTION = Cur_ANGLE_THET_CORRECTION
             
-        if text == "pan":
+        if text == "palm":
             Delay_L, Delay_R = 0,0
             Delay_U, Delay_D = 0,0
 
-            if abs(Relative_X)<102 and abs(Relative_Y)<53:#hpf
+            if abs(Relative_X)<300 and abs(Relative_Y)<150:#hpf
                 if abs(Relative_X)>10 or abs(Relative_Y)>5:#lpf
 
                     #开始指数平滑
@@ -136,7 +141,7 @@ def control_cursor():
             if Delay_L > 15:
                 pyautogui.click(duration=0.3)
                 Delay_L = 0
-        elif text == "palm":
+        elif text == "pan":
             Delay_R += 1
             if Delay_R > 15:
                 pyautogui.click(button="right",duration=0.3)
@@ -164,9 +169,3 @@ control_cursor()
 # 关闭各种连接
 ssh.close()
 conn.close()
-
-
-
-    
-
-

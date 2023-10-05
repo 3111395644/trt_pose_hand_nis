@@ -125,32 +125,32 @@ myCameraKit=ServoKit(channels=16)
 import time 
 
 ANGLE_PHI = 90
-ANGLE_THET = 15
+ANGLE_THET = 25
 
-def motor_control(joints_x, joints_y):
+def motor_control(joints_x, joints_y, text):
     global WIDTH
     global HEIGHT
     global ANGLE_PHI  
     global ANGLE_THET  
-    
-    if joints_x != 0 and joints_y != 0:
-        if joints_x-0.5*WIDTH > 0.3*WIDTH:
-            if ANGLE_PHI < 180:
-                ANGLE_PHI += 1
-                myCameraKit.servo[15].angle=ANGLE_PHI
-        elif joints_x-0.5*WIDTH < -0.3*WIDTH:       
-            if ANGLE_PHI > 0:
-                ANGLE_PHI -= 1
-                myCameraKit.servo[15].angle=ANGLE_PHI
-        
-        if joints_y-0.5*HEIGHT > 0.3*HEIGHT:#方向颠倒
-            if ANGLE_THET > 0:
-                ANGLE_THET -= 1
-                myCameraKit.servo[14].angle=ANGLE_THET
-        elif joints_y-0.5*HEIGHT < -0.2*HEIGHT:
-            if ANGLE_THET < 90:
-                ANGLE_THET += 1
-                myCameraKit.servo[14].angle=ANGLE_THET
+    if text != "pan":
+        if joints_x != 0 and joints_y != 0:
+            if joints_x-0.5*WIDTH > 0.3*WIDTH:
+                if ANGLE_PHI < 180:
+                    ANGLE_PHI += 1
+                    myCameraKit.servo[15].angle=ANGLE_PHI
+            elif joints_x-0.5*WIDTH < -0.3*WIDTH:       
+                if ANGLE_PHI > 0:
+                    ANGLE_PHI -= 1
+                    myCameraKit.servo[15].angle=ANGLE_PHI
+            
+            if joints_y-0.5*HEIGHT > 0.2*HEIGHT:#方向颠倒
+                if ANGLE_THET > 0:
+                    ANGLE_THET -= 1
+                    myCameraKit.servo[14].angle=ANGLE_THET
+            elif joints_y-0.5*HEIGHT < -0.2*HEIGHT:
+                if ANGLE_THET < 90:
+                    ANGLE_THET += 1
+                    myCameraKit.servo[14].angle=ANGLE_THET
 #------------------------------------
 
 def image_show(data_q):
@@ -194,7 +194,7 @@ def execute(data_q):
             client.close()
             break
 
-        motor_control(joint_x, joint_y)
+        motor_control(joint_x, joint_y, preprocessdata.text)
 
 #------------------------------------ 
 import socket
