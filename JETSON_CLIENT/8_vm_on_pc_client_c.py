@@ -132,24 +132,24 @@ def motor_control(joints_x, joints_y, text):
     global HEIGHT
     global ANGLE_PHI  
     global ANGLE_THET  
-    if text != "pan":
+    if text == "palm":
         if joints_x != 0 and joints_y != 0:
             if joints_x-0.5*WIDTH > 0.3*WIDTH:
                 if ANGLE_PHI < 180:
-                    ANGLE_PHI += 1
+                    ANGLE_PHI += 0.25
                     myCameraKit.servo[15].angle=ANGLE_PHI
             elif joints_x-0.5*WIDTH < -0.3*WIDTH:       
                 if ANGLE_PHI > 0:
-                    ANGLE_PHI -= 1
+                    ANGLE_PHI -= 0.25
                     myCameraKit.servo[15].angle=ANGLE_PHI
             
-            if joints_y-0.5*HEIGHT > 0.2*HEIGHT:#方向颠倒
+            if joints_y-0.5*HEIGHT > 0.45*HEIGHT:#方向颠倒
                 if ANGLE_THET > 0:
-                    ANGLE_THET -= 1
+                    ANGLE_THET -= 0.25
                     myCameraKit.servo[14].angle=ANGLE_THET
-            elif joints_y-0.5*HEIGHT < -0.2*HEIGHT:
-                if ANGLE_THET < 90:
-                    ANGLE_THET += 1
+            elif joints_y-0.5*HEIGHT < 0.1*HEIGHT:
+                if ANGLE_THET < 60:
+                    ANGLE_THET += 0.25
                     myCameraKit.servo[14].angle=ANGLE_THET
 #------------------------------------
 
@@ -162,6 +162,9 @@ def image_show(data_q):
 #------------------------------------
 
 def execute(data_q):
+    myCameraKit.servo[15].angle=90
+    myCameraKit.servo[14].angle=25#云台初始化
+
     while True:
         cursor_joint = 0
         
@@ -183,8 +186,8 @@ def execute(data_q):
         preprocessdata.print_label(image_s, preprocessdata.prev_queue, gesture_type)#ges_clf
 
         data_q.put(image_s)
-        joint_x = joints[12][0]
-        joint_y = joints[12][1]
+        joint_x = joints[cursor_joint][0]
+        joint_y = joints[cursor_joint][1]
         data = [preprocessdata.text, joint_x, joint_y, ANGLE_PHI, ANGLE_THET]  # 这里替换为要发送的实际数据
         serialized_data = pickle.dumps(data)
         try:
@@ -195,6 +198,9 @@ def execute(data_q):
             break
 
         motor_control(joint_x, joint_y, preprocessdata.text)
+
+    myCameraKit.servo[15].angle=90
+    myCameraKit.servo[14].angle=25#云台归位
 
 #------------------------------------ 
 import socket
@@ -219,10 +225,6 @@ imshow_thread = threading.Thread(target=image_show, args=(data_q, ))
 imshow_thread.daemon = True
 execute_thread = threading.Thread(target=execute, args=(data_q, ))
 
-myCameraKit.servo[15].angle=ANGLE_PHI
-myCameraKit.servo[14].angle=ANGLE_THET#云台初始化
 execute_thread.start()
 time.sleep(2)
 imshow_thread.start()
-myCameraKit.servo[15].angle=ANGLE_PHI
-myCameraKit.servo[14].angle=ANGLE_THET#云台归位

@@ -45,6 +45,7 @@ conn, addr = server.accept()
 print('Connected by', addr)
 #------------------------------------
 import pyautogui
+import math
 import time
 
 pyautogui.FAILSAFE = False
@@ -53,7 +54,7 @@ Cur_x, Cur_y = 0,0
 Pre_x, Pre_y = 0,0
 Delay_L, Delay_R = 0,0
 Delay_U, Delay_D = 0,0
-CapSensitivity, MotorSensitivity = 224/1.2, 20#for adjust
+CapSensitivity, MotorSensitivity_PHI, MotorSensitivity_THET = 224, 75, 37#for adjust
 Relative_X, Relative_Y = 0,0
 text = "startpoint"
 CPOS_x, CPOS_y = ScreenWidth/2, ScreenHeight/2
@@ -70,7 +71,7 @@ def control_cursor():
     global Pre_x, Pre_y 
     global Delay_L, Delay_R 
     global Delay_U, Delay_D 
-    global CapSensitivity, MotorSensitivity 
+    global CapSensitivity, MotorSensitivity_PHI, MotorSensitivity_THET 
     global Relative_X, Relative_Y
     global text
     global CPOS_x, CPOS_y
@@ -93,8 +94,8 @@ def control_cursor():
 
         Cur_x = int((joints_pos_x)/CapSensitivity*ScreenWidth)
         Cur_y = int((joints_pos_y)/CapSensitivity*ScreenHeight)
-        Cur_ANGLE_PHI_CORRECTION = (ANGLE_PHI)*MotorSensitivity
-        Cur_ANGLE_THET_CORRECTION = (ANGLE_THET)*MotorSensitivity
+        Cur_ANGLE_PHI_CORRECTION = MotorSensitivity_PHI*ANGLE_PHI
+        Cur_ANGLE_THET_CORRECTION = MotorSensitivity_THET*ANGLE_THET
         if Cur_ANGLE_PHI_CORRECTION != Pre_ANGLE_PHI_CORRECTION or Cur_ANGLE_THET_CORRECTION != Pre_ANGLE_THET_CORRECTION:
             Relative_X = (Cur_ANGLE_PHI_CORRECTION - Pre_ANGLE_PHI_CORRECTION)
             Relative_Y = -(Cur_ANGLE_THET_CORRECTION - Pre_ANGLE_THET_CORRECTION)
@@ -110,7 +111,7 @@ def control_cursor():
             Delay_L, Delay_R = 0,0
             Delay_U, Delay_D = 0,0
 
-            if abs(Relative_X)<300 and abs(Relative_Y)<150:#hpf
+            if abs(Relative_X)<200 and abs(Relative_Y)<100:#hpf
                 if abs(Relative_X)>10 or abs(Relative_Y)>5:#lpf
 
                     #开始指数平滑
