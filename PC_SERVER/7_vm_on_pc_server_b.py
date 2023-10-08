@@ -62,97 +62,97 @@ ST1_x, ST1_y = CPOS_x, CPOS_y
 ST2_x, ST2_y = CPOS_x, CPOS_y
 CPOS_x_processed, CPOS_y_processed = 0,0
 
-def control_cursor(data):
-    
-    global ScreenWidth, ScreenHeight
-    global Cur_x, Cur_y
-    global Pre_x, Pre_y 
-    global Delay_L, Delay_R 
-    global Delay_U, Delay_D 
-    global MouseSensitivity, ScrollSensitivity 
-    global Relative_X, Relative_Y
-    global Ture_Relative_X, Ture_Relative_Y
-    global text
-    global CPOS_x, CPOS_y
-    global ST1_x, ST1_y, ST2_x, ST2_y
-    global CPOS_x_processed, CPOS_y_processed
-    
-    text = data[0]
-    joints_pos_x = data[1]
-    joints_pos_y = data[2]
-    Cur_x = int((joints_pos_x)/MouseSensitivity*ScreenWidth)
-    Cur_y = int((joints_pos_y)/MouseSensitivity*ScreenHeight)
-    Relative_X = Cur_x - Pre_x#这里Relative_X的方向是反向的 --nis
-    Relative_Y = Cur_y - Pre_y
-    Pre_x = Cur_x
-    Pre_y = Cur_y
-        
-    if text == "pan":
-        Delay_L, Delay_R = 0,0
-        Delay_U, Delay_D = 0,0
+def control_cursor():
+    while True:
+        serialized_data = conn.recv(1024)  # 接收数据,chatgpt这里不准确
+        data = pickle.loads(serialized_data)  # 反序列化数据，得到原始的列表
 
-        if abs(Relative_X)<102 and abs(Relative_Y)<53:#hpf
-            if abs(Relative_X)>10 or abs(Relative_Y)>5:#lpf
-                Ture_Relative_X = -Relative_X#'-' is for revision --nis 
-                Ture_Relative_Y = Relative_Y
-                #开始指数平滑
-                if 0<(CPOS_x + Ture_Relative_X)<ScreenWidth:
-                    CPOS_x += Ture_Relative_X
-                if 0<(CPOS_y + Ture_Relative_Y)<ScreenHeight:
-                    CPOS_y += Ture_Relative_Y
-                a = 0.2#平滑系数
-                ST1_x = int(a*CPOS_x + (1-a)*ST1_x)
-                ST1_y = int(a*CPOS_y + (1-a)*ST1_y)
-                ST2_x = int(a*ST1_x + (1-a)*ST2_x)
-                ST2_y = int(a*ST1_y + (1-a)*ST2_y)
-                CPOS_x_processed = int(2*ST1_x - ST2_x + a/(1-a)*(ST1_x - ST2_x))
-                if CPOS_x_processed > ScreenWidth:
-                    CPOS_x_processed = ScreenWidth
-                elif CPOS_x_processed < 0:
-                    CPOS_x_processed = 0
-                CPOS_y_processed = int(2*ST1_y - ST2_y + a/(1-a)*(ST1_y - ST2_y))
-                if CPOS_y_processed > ScreenHeight:
-                    CPOS_y_processed = ScreenHeight
-                elif CPOS_y_processed < 0:
-                    CPOS_y_processed = 0#平滑完毕
-                pyautogui.moveTo(CPOS_x_processed, CPOS_y_processed)
-    elif text == "fist":
-        Delay_L += 1
-        if Delay_L > 15:
-            pyautogui.click(duration=0.3)
-            Delay_L = 0
-    elif text == "palm":
-        Delay_R += 1
-        if Delay_R > 15:
-            pyautogui.click(button="right",duration=0.3)
-            Delay_R = 0
-    elif text == "thumb_up":
-        Delay_U += 1
-        if Delay_U > 15:
-            pyautogui.scroll(200)
-            Delay_U = 0
-    elif text == "ok":
-        Delay_D += 1
-        if Delay_D > 15:
-            pyautogui.scroll(-200)
-            Delay_D = 0
+        if not data:
+            break
+        print('Received:', data)
+            
+        global ScreenWidth, ScreenHeight
+        global Cur_x, Cur_y
+        global Pre_x, Pre_y 
+        global Delay_L, Delay_R 
+        global Delay_U, Delay_D 
+        global MouseSensitivity, ScrollSensitivity 
+        global Relative_X, Relative_Y
+        global Ture_Relative_X, Ture_Relative_Y
+        global text
+        global CPOS_x, CPOS_y
+        global ST1_x, ST1_y, ST2_x, ST2_y
+        global CPOS_x_processed, CPOS_y_processed
+        
+        text = data[0]
+        joints_pos_x = data[1]
+        joints_pos_y = data[2]
+        Cur_x = int((joints_pos_x)/MouseSensitivity*ScreenWidth)
+        Cur_y = int((joints_pos_y)/MouseSensitivity*ScreenHeight)
+        Relative_X = Cur_x - Pre_x#这里Relative_X的方向是反向的 --nis
+        Relative_Y = Cur_y - Pre_y
+        Pre_x = Cur_x
+        Pre_y = Cur_y
+            
+        if text == "pan":
+            Delay_L, Delay_R = 0,0
+            Delay_U, Delay_D = 0,0
+
+            if abs(Relative_X)<102 and abs(Relative_Y)<53:#hpf
+                if abs(Relative_X)>10 or abs(Relative_Y)>5:#lpf
+                    Ture_Relative_X = -Relative_X#'-' is for revision --nis 
+                    Ture_Relative_Y = Relative_Y
+                    #开始指数平滑
+                    if 0<(CPOS_x + Ture_Relative_X)<ScreenWidth:
+                        CPOS_x += Ture_Relative_X
+                    if 0<(CPOS_y + Ture_Relative_Y)<ScreenHeight:
+                        CPOS_y += Ture_Relative_Y
+                    a = 0.2#平滑系数
+                    ST1_x = int(a*CPOS_x + (1-a)*ST1_x)
+                    ST1_y = int(a*CPOS_y + (1-a)*ST1_y)
+                    ST2_x = int(a*ST1_x + (1-a)*ST2_x)
+                    ST2_y = int(a*ST1_y + (1-a)*ST2_y)
+                    CPOS_x_processed = int(2*ST1_x - ST2_x + a/(1-a)*(ST1_x - ST2_x))
+                    if CPOS_x_processed > ScreenWidth:
+                        CPOS_x_processed = ScreenWidth
+                    elif CPOS_x_processed < 0:
+                        CPOS_x_processed = 0
+                    CPOS_y_processed = int(2*ST1_y - ST2_y + a/(1-a)*(ST1_y - ST2_y))
+                    if CPOS_y_processed > ScreenHeight:
+                        CPOS_y_processed = ScreenHeight
+                    elif CPOS_y_processed < 0:
+                        CPOS_y_processed = 0#平滑完毕
+                    pyautogui.moveTo(CPOS_x_processed, CPOS_y_processed)
+        elif text == "fist":
+            Delay_L += 1
+            if Delay_L > 15:
+                pyautogui.click(duration=0.3)
+                Delay_L = 0
+        elif text == "palm":
+            Delay_R += 1
+            if Delay_R > 15:
+                pyautogui.click(button="right",duration=0.3)
+                Delay_R = 0
+        elif text == "thumb_up":
+            Delay_U += 1
+            if Delay_U > 15:
+                pyautogui.scroll(200)
+                Delay_U = 0
+        elif text == "ok":
+            Delay_D += 1
+            if Delay_D > 15:
+                pyautogui.scroll(-200)
+                Delay_D = 0    
+            
+        if not listener.running:  # 如果监听器已经停止
+            break   
+    
     
                     
 print("cursor control has been set --nis\n")
 #------------------------------------ 
-while True:
-    serialized_data = conn.recv(1024)  # 接收数据,chatgpt这里不准确
-    data = pickle.loads(serialized_data)  # 反序列化数据，得到原始的列表
 
-    if not data:
-        break
-    print('Received:', data)
-        
-    control_cursor(data)    
-        
-    if not listener.running:  # 如果监听器已经停止
-        break
-
+control_cursor()
 # 关闭各种连接
 ssh.close()
 conn.close()
